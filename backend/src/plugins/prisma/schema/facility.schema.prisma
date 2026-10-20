@@ -1,0 +1,223 @@
+/// Facility (Store, Warehouse, Office, Factory, Branch)
+model facility {
+  id           Int                 @id @default(autoincrement())
+  facilityCode String              @unique @db.VarChar(50)
+  facilityName String              @db.VarChar(150)
+  type         facilityType        @default(WAREHOUSE)
+  description  String?             @db.Text
+  address      String?             @db.VarChar(255)
+  city         String?             @db.VarChar(100)
+  province     String?             @db.VarChar(100)
+  postalCode   String?             @db.VarChar(20)
+  country      String?             @default("Indonesia") @db.VarChar(100)
+  phoneNumber  String?             @db.VarChar(30)
+  email        String?             @db.VarChar(100)
+  isActive     Boolean             @default(true)
+
+  /// POS Settings: whether discounts can be applied at checkout for this facility
+  discountEnabled   Boolean   @default(true)
+  /// POS Settings: whether GST/tax calculation is enabled for this facility
+  taxEnabled        Boolean   @default(false)
+  /// POS Settings: GST/PPN rate as a percentage (e.g. 11 for 11% Indonesian PPN)
+  taxRate           Decimal   @default(11) @db.Decimal(5, 2)
+  /// POS Settings: show a tax line on the receipt (price is tax-inclusive; this just shows the breakdown)
+  showTaxBreakdown  Boolean   @default(false)
+
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime?           @updatedAt
+  deletedAt    DateTime?
+  createdBy    String
+  updatedBy    String?
+
+  facilityCreatedBy user           @relation("facilityCreatedBy", fields: [createdBy], references: [id])
+  facilityUpdatedBy user?          @relation("facilityUpdatedBy", fields: [updatedBy], references: [id])
+
+  sections           facilitySection[]
+  productInventories productInventory[]
+  productWastes      productWaste[]
+  storageStocks      productStorageStock[]
+  salesOrders        salesOrder[]
+  purchaseOrders     purchaseOrder[]          @relation("purchaseOrderDestinationFacility")
+  employees          employee[]               @relation("employeeFacility")
+  rolePermissions    roleFacilityPermission[] @relation("facilityRolePermissions")
+  productionBatches  productionBatch[]        @relation("facilityProductionBatches")
+  facilityEmployees  facilityEmployee[]
+  facilityProducts   facilityProduct[]
+  facilityEquipments facilityEquipment[]
+  tables             facilityTable[]
+  shifts             shift[]            @relation("facilityShifts")
+  employeeSchedules  employeeSchedule[] @relation("facilitySchedules")
+
+  @@index([facilityCode])
+  @@index([type])
+  @@index([city])
+  @@index([isActive])
+}
+
+/// Facility Section (Zone, Aisle, Rack, Room, Counter, Shelf inside a Facility)
+model facilitySection {
+  id          Int                 @id @default(autoincrement())
+  facilityId  Int
+  sectionCode String              @db.VarChar(50)
+  sectionName String              @db.VarChar(150)
+  type        facilitySectionType @default(ZONE)
+  description String?             @db.Text
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime?           @updatedAt
+  deletedAt   DateTime?
+  createdBy   String
+  updatedBy   String?
+
+  facility         facility           @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  sectionCreatedBy user               @relation("facilitySectionCreatedBy", fields: [createdBy], references: [id])
+  sectionUpdatedBy user?              @relation("facilitySectionUpdatedBy", fields: [updatedBy], references: [id])
+
+  productInventories productInventory[]
+  productWastes      productWaste[]
+  storageStocks      productStorageStock[]
+  facilityEquipments facilityEquipment[]
+  tables             facilityTable[]
+
+  @@unique([facilityId, sectionCode])
+  @@index([facilityId])
+  @@index([sectionCode])
+  @@index([type])
+  @@index([isActive])
+}
+
+/// Real-time Inventory Stock per Facility & Section
+model productStorageStock {
+  id         Int              @id @default(autoincrement())
+  productId  Int
+  facilityId Int
+  sectionId  Int?
+  stock      Decimal          @default(0) @db.Decimal(20, 4)
+  minStock   Decimal          @default(0) @db.Decimal(20, 4)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime?        @updatedAt
+
+  product  product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  facility facility         @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  section  facilitySection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@unique([productId, facilityId, sectionId])
+  @@index([productId])
+  @@index([facilityId])
+  @@index([sectionId])
+}
+
+/// Conjunction table: Employees assigned to Facilities (Many-to-Many)
+model facilityEmployee {
+  id         Int       @id @default(autoincrement())
+  facilityId Int
+  employeeId Int
+  isPrimary  Boolean   @default(false)
+  role       String?   @db.VarChar(100) // Optional facility-specific title / assignment role
+  notes      String?   @db.Text
+  assignedAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+  deletedAt  DateTime?
+  createdBy  String
+  updatedBy  String?
+
+  facility                  facility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  employee                  employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  facilityEmployeeCreatedBy user      @relation("facilityEmployeeCreatedBy", fields: [createdBy], references: [id])
+  facilityEmployeeUpdatedBy user?     @relation("facilityEmployeeUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([facilityId, employeeId])
+  @@index([facilityId])
+  @@index([employeeId])
+}
+
+/// Conjunction table: Products available/tradeable at Facilities (Many-to-Many)
+model facilityProduct {
+  id          Int       @id @default(autoincrement())
+  facilityId  Int
+  productId   Int
+  isTradeable Boolean   @default(true) // Whether this product can be traded / sold in POS at this facility
+  minStock    Decimal?  @default(0) @db.Decimal(20, 4)
+  maxStock    Decimal?  @db.Decimal(20, 4)
+  isActive    Boolean   @default(true)
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+  deletedAt   DateTime?
+  createdBy   String
+  updatedBy   String?
+
+  facility                 facility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  product                  product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  facilityProductCreatedBy user      @relation("facilityProductCreatedBy", fields: [createdBy], references: [id])
+  facilityProductUpdatedBy user?     @relation("facilityProductUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([facilityId, productId])
+  @@index([facilityId])
+  @@index([productId])
+  @@index([isTradeable])
+  @@index([isActive])
+}
+
+/// Conjunction table: Equipment stationed at Facilities (Many-to-Many)
+model facilityEquipment {
+  id                Int              @id @default(autoincrement())
+  facilityId        Int
+  equipmentEntityId Int
+  sectionId         Int?             // Optional section/zone/room within the facility
+  status            String           @default("ACTIVE") @db.VarChar(50) // ACTIVE, MAINTENANCE, STANDBY, DECOMMISSIONED
+  quantity          Int              @default(1)
+  notes             String?          @db.Text
+  assignedAt        DateTime         @default(now())
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime?        @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  updatedBy         String?
+
+  facility                   facility         @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  equipmentEntity            equipmentEntity  @relation(fields: [equipmentEntityId], references: [id], onDelete: Cascade)
+  section                    facilitySection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  facilityEquipmentCreatedBy user             @relation("facilityEquipmentCreatedBy", fields: [createdBy], references: [id])
+  facilityEquipmentUpdatedBy user?            @relation("facilityEquipmentUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([facilityId, equipmentEntityId])
+  @@index([facilityId])
+  @@index([equipmentEntityId])
+  @@index([sectionId])
+  @@index([status])
+}
+
+/// Facility Table (Dining, Seating, Cafe, Restaurant, Meeting tables within a Facility)
+model facilityTable {
+  id          Int              @id @default(autoincrement())
+  facilityId  Int
+  sectionId   Int?             // Optional section/zone/room within the facility (e.g. Indoor, Patio, VIP)
+  tableNumber String           @db.VarChar(50) // e.g. T-01, Table 1, VIP-02
+  label       String?          @db.VarChar(100) // e.g. Window Booth, Balcony 4-top
+  capacity    Int              @default(4)
+  status      String           @default("AVAILABLE") @db.VarChar(50) // AVAILABLE, OCCUPIED, RESERVED, OUT_OF_SERVICE
+  qrCode      String?          @db.Text
+  isActive    Boolean          @default(true)
+  notes       String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime?        @updatedAt
+  deletedAt   DateTime?
+  createdBy   String
+  updatedBy   String?
+
+  facility               facility         @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  section                facilitySection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  facilityTableCreatedBy user             @relation("facilityTableCreatedBy", fields: [createdBy], references: [id])
+  facilityTableUpdatedBy user?            @relation("facilityTableUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([facilityId, tableNumber])
+  @@index([facilityId])
+  @@index([sectionId])
+  @@index([tableNumber])
+  @@index([status])
+  @@index([isActive])
+}
+

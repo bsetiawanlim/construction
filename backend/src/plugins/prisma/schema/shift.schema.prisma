@@ -1,0 +1,51 @@
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Shift — Cash Drawer & POS Shift Management
+/// ─────────────────────────────────────────────────────────────────────────────
+
+/// shift — one cashier session from open to close
+model shift {
+  id              Int       @id @default(autoincrement())
+
+  /// User who opened this shift
+  openedBy        String
+  /// User who closed this shift (null while still open)
+  closedBy        String?
+
+  openedAt        DateTime  @default(now())
+  closedAt        DateTime?
+
+  /// Cash put in the drawer at shift open
+  openingCash     Decimal   @db.Decimal(20, 4)
+
+  /// Cash physically counted in the drawer at shift close
+  closingCash     Decimal?  @db.Decimal(20, 4)
+
+  /// Expected cash = openingCash + total CASH sales during this shift
+  expectedCash    Decimal?  @db.Decimal(20, 4)
+
+  /// closingCash − expectedCash  (positive = overage, negative = shortage)
+  cashVariance    Decimal?  @db.Decimal(20, 4)
+
+  /// Summary totals calculated at close
+  totalSales      Decimal?  @db.Decimal(20, 4)
+  totalOrders     Int?
+  totalCash       Decimal?  @db.Decimal(20, 4)
+  totalCard       Decimal?  @db.Decimal(20, 4)
+  totalTransfer   Decimal?  @db.Decimal(20, 4)
+  totalEwallet    Decimal?  @db.Decimal(20, 4)
+
+  notes           String?   @db.Text
+  facilityId      Int?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime? @updatedAt
+
+  openedByUser    user      @relation("shiftOpenedBy",  fields: [openedBy],  references: [id])
+  closedByUser    user?     @relation("shiftClosedBy",  fields: [closedBy],  references: [id])
+  facility        facility? @relation("facilityShifts", fields: [facilityId], references: [id], onDelete: SetNull)
+
+  @@index([openedBy])
+  @@index([openedAt])
+  @@index([closedAt])
+  @@index([facilityId])
+}

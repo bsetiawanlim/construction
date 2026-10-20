@@ -1,0 +1,120 @@
+enum accountType {
+  bankAccount
+  cashAccount
+  loanAccount
+  savingAccount
+  creditCardAccount
+}
+
+enum transactionStatus {
+  pending
+  completed
+  cancelled
+  reversed
+  partialSettled
+}
+
+enum transactionType {
+  debet
+  credit
+}
+
+enum referenceType {
+  receivedInvoice
+  issuedInvoice
+}
+
+enum orderStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum requestOrigin {
+  project
+  office
+}
+
+enum transactionFlow {
+  cash
+  credit
+  electronic
+}
+
+enum transactionIOType {
+  debet
+  credit
+}
+
+/// Lifecycle states for a construction work offer / quotation
+enum offerStatus {
+  DRAFT      // Being prepared, not yet sent
+  SENT       // Sent to the customer for review
+  REVISED    // A new revision was issued
+  ACCEPTED   // Customer accepted the offer
+  REJECTED   // Customer rejected the offer
+  EXPIRED    // validUntil date has passed without acceptance
+  CANCELLED  // Withdrawn by the issuer
+}
+
+/// Inventory movement direction for product stock
+enum inventoryTransactionType {
+  IN          // Stock received / purchased
+  OUT         // Stock issued / used
+  ADJUSTMENT  // Manual correction
+}
+
+/// Lifecycle of a kitchen production batch
+enum productionBatchStatus {
+  PLANNED     // Work order created by manager with assigned facility and person in charge
+  IN_PROGRESS // In production / cooking / baking
+  COMPLETED   // Confirmed by person in charge: materials consumed, finished stock added to facility
+  CANCELLED   // Reversed: materials returned if previously completed, or cancelled while planned
+}
+
+enum taskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  CANCELLED
+}
+
+enum taskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// Type of facility / physical location
+enum facilityType {
+  WAREHOUSE     // Storage, depot, central distribution center
+  STORE         // Retail outlet, POS outlet, showroom, cafe, shop
+  OFFICE        // Corporate headquarter, administrative office, branch
+  FACTORY       // Manufacturing plant, central kitchen, workshop
+  OTHER         // Yard, staging area, project site
+}
+
+/// Type of section inside a facility
+enum facilitySectionType {
+  ZONE          // General floor zone (e.g. Zone A, Ground Floor)
+  AISLE         // Storage aisle
+  RACK          // Storage rack / shelf
+  ROOM          // Cold room, dry room, secure vault, backroom
+  COUNTER       // Front counter, checkout register area
+  DISPLAY       // Sales floor display shelf / gondola
+  STAGING       // Inbound receiving or outbound dispatch staging
+  OTHER         // Miscellaneous section
+}
+
+/// Reason for lost, spoiled, damaged, or expired product write-off
+enum wasteReason {
+  EXPIRED     // Passed shelf-life / best-before date
+  SPOILED     // Degraded, sour, rotten, mouldy, thawed
+  LOST        // Missing during stock count / unaccounted shrinkage / stolen
+  DAMAGED     // Dropped, broken packaging, defective, contaminated
+  SCRAP       // Trimmings, preparation waste, burnt/overcooked batch
+  OTHER       // Other disposal reason
+}

@@ -1,0 +1,132 @@
+model profile {
+  id                  Int                 @id @default(autoincrement())
+  title               String?              @db.VarChar(10)
+  firstName           String              @db.VarChar(100)
+  lastName            String?             @db.VarChar(100)
+  email               String?             @db.VarChar(100)
+  dateOfBirth         DateTime?           @db.Date
+  address             String?
+  city                String?             @db.VarChar(100)
+  province            String?             @db.VarChar(100)
+  postalCode          String?             @db.VarChar(20)
+  country             String?             @default("Indonesia") @db.VarChar(100)
+  isCompany           Boolean             @default(false)
+  socialId            String?             @db.VarChar(50)
+  taxId               String?             @db.VarChar(50)
+  phoneNumber         String?             @db.VarChar(20)
+  phoneNumberVerified Boolean             @default(false)
+  whatsapp            String?             @db.VarChar(20)
+  whatsappVerified    Boolean             @default(false)
+  gender              String?             @db.VarChar(10)
+  notes               String?             @db.Text
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime      @updatedAt
+  deletedAt           DateTime?
+  createdBy           String
+  updatedBy           String?
+  profilecreatedBy    user                @relation("profileCreatedBy", fields: [createdBy], references: [id])
+  profileupdatedBy    user?               @relation("profileUpdatedBy", fields: [updatedBy], references: [id])
+  userProfile         user[]              @relation("userProfile")
+  vendor              vendor[]            @relation("vendorProfile")
+  customer            customer[]          @relation("customerProfile")
+  employee            employee[]          @relation("employeeProfile")
+  contactPerson       profileContact[]    @relation("contactPerson")
+  relatedProfile      profileContact[]    @relation("relatedProfile")
+  monetaryAccount     monetaryAccount[]   @relation("monetaryAccountProfile")
+  profileDocument     profileDocument[]   @relation("profileDocument")
+  socialMedia         profileSocialMedia[] @relation("profileSocialMedia")
+
+  @@index([city])
+  @@index([province])
+  @@index([country])
+  @@index([email])
+}
+
+model profileContact {
+  id                     Int       @id @default(autoincrement())
+  profileId              Int
+  contactPersonId        Int
+  position               String?   @db.VarChar(100)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+  createdBy              String
+  contactPersonCreatedBy user      @relation("contactPersonCreatedBy", fields: [createdBy], references: [id])
+  updatedBy              String
+  contactPersonUpdatedBy user      @relation("contactPersonUpdatedBy", fields: [updatedBy], references: [id])
+  profile                profile   @relation("relatedProfile", fields: [profileId], onDelete: Cascade, references: [id])
+  contactPerson          profile   @relation("contactPerson", fields: [contactPersonId], onDelete: Cascade, references: [id])
+}
+
+model customer {
+  id                Int       @id @default(autoincrement())
+  profileId         Int
+  customergroup     Int?
+  departReason      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  customerCreatedBy user      @relation("customerCreatedBy", fields: [createdBy], references: [id])
+  updatedBy         String
+  customerUpdatedBy user      @relation("customerUpdatedBy", fields: [updatedBy], references: [id])
+  profile           profile   @relation("customerProfile", fields: [profileId], references: [id])
+  workOffer         workOffer[] @relation("workOfferCustomer")
+  salesOrders       salesOrder[] @relation("salesOrderCustomer")
+}
+
+model vendor {
+  id              Int             @id @default(autoincrement())
+  profileId       Int
+  vendorgroup     Int?
+  departReason    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+  createdBy       String
+  vendorCreatedBy user            @relation("vendorCreatedBy", fields: [createdBy], references: [id])
+  updatedBy       String
+  vendorUpdatedBy user            @relation("vendorUpdatedBy", fields: [updatedBy], references: [id])
+  profile         profile         @relation("vendorProfile", fields: [profileId], references: [id])
+  rfq             rfq[]           @relation("rfqVendor")
+  purchaseOrder   purchaseOrder[] @relation("purchaseOrderVendor")
+  vendorProducts  vendorProduct[] @relation("vendorVendorProduct")
+}
+
+model profileDocument {
+  id                       Int       @id @default(autoincrement())
+  profileId                Int
+  documentType             String    @db.VarChar(50)
+  documentName             String    @db.VarChar(255)
+  documentPath             String    @db.VarChar(255)
+  issueDate                DateTime?
+  expiredDate              DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  createdBy                String
+  profileDocumentCreatedBy user      @relation("profileDocumentCreatedBy", fields: [createdBy], references: [id])
+  updatedBy                String
+  profileDocumentUpdatedBy user      @relation("profileDocumentUpdatedBy", fields: [updatedBy], references: [id])
+  profile                  profile   @relation("profileDocument", fields: [profileId], references: [id])
+}
+
+model profileSocialMedia {
+  id                          Int       @id @default(autoincrement())
+  profileId                   Int
+  platform                    String    @db.VarChar(50)
+  username                    String?   @db.VarChar(100)
+  url                         String    @db.VarChar(500)
+  notes                       String?   @db.Text
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  deletedAt                   DateTime?
+  createdBy                   String
+  profileSocialMediaCreatedBy user      @relation("profileSocialMediaCreatedBy", fields: [createdBy], references: [id])
+  updatedBy                   String?
+  profileSocialMediaUpdatedBy user?     @relation("profileSocialMediaUpdatedBy", fields: [updatedBy], references: [id])
+  profile                     profile   @relation("profileSocialMedia", fields: [profileId], onDelete: Cascade, references: [id])
+
+  @@index([profileId])
+  @@index([platform])
+}

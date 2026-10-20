@@ -1,0 +1,58 @@
+model monetaryAccount {
+  id                Int                   @id @default(autoincrement())
+  institute         String?               @db.VarChar(50)
+  accountName       String                @db.VarChar(50)
+  accountId         String?               @unique
+  profileId         Int?
+  accountType       accountType
+  description       String?               @db.VarChar(255)
+  balance           Decimal               @default(0) @db.Decimal(20, 4)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime?              @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  accountCreatedBy  user                  @relation("accountCreatedBy", fields: [createdBy], references: [id])
+  updatedBy         String?
+  accountUpdatedBy  user?                  @relation("accountUpdatedBy", fields: [updatedBy], references: [id])
+  profile           profile?              @relation("monetaryAccountProfile", fields: [profileId], references: [id])
+  sourceTransaction monetaryTransaction[] @relation("sourceAccount")
+  targetTransaction monetaryTransaction[] @relation("targetAccount")
+  salesPayments     salesPayment[]        @relation("salesPaymentAccount")
+}
+
+model monetaryTransaction {
+  id                   Int               @id @default(autoincrement())
+  sourceAccountId      Int
+  targetAccountId      Int
+  description          String?
+  transactionFlow      transactionFlow
+  amount               Decimal           @default(0) @db.Decimal(20, 4)
+  currency             String            @default("IDR") @db.VarChar(3)
+  status               transactionStatus
+  sourceAccount        monetaryAccount   @relation("sourceAccount", fields: [sourceAccountId], references: [id])
+  targetAccount        monetaryAccount   @relation("targetAccount", fields: [targetAccountId], references: [id])
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime?          @updatedAt
+  deletedAt            DateTime?
+  createdBy            String
+  transactionCreatedBy user              @relation("transactionCreatedBy", fields: [createdBy], references: [id])
+  updatedBy            String?
+  transactionUpdatedBy user?              @relation("transactionUpdatedBy", fields: [updatedBy], references: [id])
+  transactionReferences monetaryTransactionReference[] @relation("transactionReference")
+}
+
+model monetaryTransactionReference {
+  id                 Int             @id @default(autoincrement())
+  transactionId      Int
+  /// Polymorphic reference ID — points to the related document (invoice, order, etc.)
+  referenceId        Int
+  transaction        monetaryTransaction @relation("transactionReference", fields: [transactionId], references: [id])
+  transactionType    transactionType
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime?          @updatedAt
+  deletedAt          DateTime?
+  createdBy          String
+  referenceCreatedBy user            @relation("referenceCreatedBy", fields: [createdBy], references: [id])
+  updatedBy          String?
+  referenceUpdatedBy user?            @relation("referenceUpdatedBy", fields: [updatedBy], references: [id])
+}

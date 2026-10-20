@@ -1,0 +1,246 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Worker  – a type/role of labour that can be assigned to a work item
+// ─────────────────────────────────────────────────────────────────────────────
+model worker {
+  id              Int          @id @default(autoincrement())
+  name            String
+  description     String?
+  /// FK → unit.id  (optional – e.g. "person-day", "person-hour")
+  unitId          Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime?     @updatedAt
+  deletedAt       DateTime?
+  createdBy       String
+  updatedBy       String?
+  workerCreatedBy user         @relation("workerCreatedBy", fields: [createdBy], references: [id])
+  workerUpdatedBy user?         @relation("workerUpdatedBy", fields: [updatedBy], references: [id])
+  unit            unit?        @relation("workerUnit", fields: [unitId], references: [id])
+  workWorker      workWorker[] @relation("workWorkerWorker")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Item  – a material / supply line that can be attached to a work item
+// ─────────────────────────────────────────────────────────────────────────────
+model item {
+  id            Int        @id @default(autoincrement())
+  productId     Int
+  description   String?
+  /// FK → unit.id
+  unitId        Int?
+  unitPrice     Decimal    @db.Decimal(20, 4)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?   @updatedAt
+  deletedAt     DateTime?
+  createdBy     String
+  updatedBy     String?
+  product       product    @relation("itemProduct", fields: [productId], references: [id])
+  itemCreatedBy user       @relation("itemCreatedBy", fields: [createdBy], references: [id])
+  itemUpdatedBy user?       @relation("itemUpdatedBy", fields: [updatedBy], references: [id])
+  unit          unit?      @relation("itemUnit", fields: [unitId], references: [id])
+  workItem      workItem[] @relation("workItemItem")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Work  – a single line of construction work (BOQ line)
+// ─────────────────────────────────────────────────────────────────────────────
+model work {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  description   String?
+  /// FK → unit.id (e.g. m², m³, unit)
+  unitId        Int?
+  unitPrice     Decimal         @db.Decimal(20, 4)
+  amount        Decimal         @db.Decimal(20, 4)
+  totalPrice    Decimal         @db.Decimal(20, 4)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime?        @updatedAt
+  deletedAt     DateTime?
+  createdBy     String
+  updatedBy     String?
+  workCreatedBy user            @relation("workCreatedBy", fields: [createdBy], references: [id])
+  workUpdatedBy user?            @relation("workUpdatedBy", fields: [updatedBy], references: [id])
+  unit          unit?           @relation("workUnit", fields: [unitId], references: [id])
+  workItem      workItem[]      @relation("workItemWork")
+  workWorker    workWorker[]    @relation("workWorkerWork")
+  workEquipment workEquipment[] @relation("workEquipmentWork")
+  workOfferItem workOfferItem[] @relation("workOfferItemWork")
+  tasks         task[]          @relation("workTask")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkItem  – material breakdown for a work line
+// ─────────────────────────────────────────────────────────────────────────────
+model workItem {
+  id                Int       @id @default(autoincrement())
+  /// BOQ / specification code (optional)
+  code              String?   @db.VarChar(100)
+  workId            Int
+  itemId            Int
+  unitPrice         Decimal   @db.Decimal(20, 4)
+  amount            Decimal   @db.Decimal(20, 4)
+  totalPrice        Decimal   @db.Decimal(20, 4)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime?  @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  updatedBy         String?
+  work              work      @relation("workItemWork", fields: [workId], references: [id])
+  item              item      @relation("workItemItem", fields: [itemId], references: [id])
+  workItemCreatedBy user      @relation("workItemCreatedBy", fields: [createdBy], references: [id])
+  workItemUpdatedBy user?      @relation("workItemUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([workId, itemId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkWorker  – labour breakdown for a work line
+//   Surrogate PK so the same worker can appear for different shifts/periods.
+// ─────────────────────────────────────────────────────────────────────────────
+model workWorker {
+  id                  Int       @id @default(autoincrement())
+  workId              Int
+  workerId            Int
+  unitPrice           Decimal   @db.Decimal(20, 4)
+  amount              Decimal   @db.Decimal(20, 4)
+  totalPrice          Decimal   @db.Decimal(20, 4)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime?  @updatedAt
+  deletedAt           DateTime?
+  createdBy           String
+  updatedBy           String?
+  work                work      @relation("workWorkerWork", fields: [workId], references: [id])
+  worker              worker    @relation("workWorkerWorker", fields: [workerId], references: [id])
+  workWorkerCreatedBy user      @relation("workWorkerCreatedBy", fields: [createdBy], references: [id])
+  workWorkerUpdatedBy user?      @relation("workWorkerUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([workId, workerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkEquipment  – equipment breakdown for a work line
+//   Surrogate PK so the same equipment can appear for different mobilisation periods.
+// ─────────────────────────────────────────────────────────────────────────────
+model workEquipment {
+  id                     Int             @id @default(autoincrement())
+  workId                 Int
+  equipmentId            Int
+  unitPrice              Decimal         @db.Decimal(20, 4)
+  amount                 Decimal         @db.Decimal(20, 4)
+  totalPrice             Decimal         @db.Decimal(20, 4)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime?        @updatedAt
+  deletedAt              DateTime?
+  createdBy              String
+  updatedBy              String?
+  work                   work            @relation("workEquipmentWork", fields: [workId], references: [id])
+  equipment              equipmentEntity @relation("workEquipmentEquipment", fields: [equipmentId], references: [id])
+  workEquipmentCreatedBy user            @relation("workEquipmentCreatedBy", fields: [createdBy], references: [id])
+  workEquipmentUpdatedBy user?            @relation("workEquipmentUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([workId, equipmentId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkOffer  – a construction offer / quotation document
+// ─────────────────────────────────────────────────────────────────────────────
+model workOffer {
+  id                 Int             @id @default(autoincrement())
+  /// Human-readable offer number, e.g. OFF-2026-001
+  offerNumber        String          @unique @db.VarChar(50)
+  customerId         Int
+  /// ISO 4217 currency code, e.g. IDR, USD
+  currency           String          @default("IDR") @db.VarChar(3)
+  notes              String?         @db.Text
+  dateIssued         DateTime
+  validUntil         DateTime
+  status             offerStatus     @default(DRAFT)
+
+  // ── Raw subtotal (sum of workOfferItem.totalPrice) ──
+  totalPrice         Decimal         @db.Decimal(20, 4)
+
+  // ── Overhead ──
+  includeOverhead    Boolean         @default(false)
+  overHeadPercentage Decimal         @db.Decimal(10, 4)
+  overHeadAmount     Decimal         @db.Decimal(20, 4)
+
+  // ── Profit / Margin ──
+  includeProfit      Boolean         @default(false)
+  profitPercentage   Decimal         @db.Decimal(10, 4)
+  profitAmount       Decimal         @db.Decimal(20, 4)
+
+  // ── Discount (applied before tax) ──
+  includeDiscount    Boolean         @default(false)
+  discountPercentage Decimal         @db.Decimal(10, 4)
+  discountAmount     Decimal         @db.Decimal(20, 4)
+
+  // ── Tax ──
+  includeTax         Boolean         @default(false)
+  taxPercentage      Decimal         @db.Decimal(10, 4)
+  taxAmount          Decimal         @db.Decimal(20, 4)
+
+  // ── Final grand total (after overhead + profit + discount + tax) ──
+  grandTotal         Decimal         @db.Decimal(20, 4)
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime?        @updatedAt
+  deletedAt          DateTime?
+  createdBy          String
+  updatedBy          String?
+  workOfferCreatedBy user            @relation("workOfferCreatedBy", fields: [createdBy], references: [id])
+  workOfferUpdatedBy user?            @relation("workOfferUpdatedBy", fields: [updatedBy], references: [id])
+  workOfferCustomer  customer        @relation("workOfferCustomer", fields: [customerId], references: [id])
+  workOfferItem      workOfferItem[] @relation("workOffer")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WorkOfferItem  – individual work lines inside an offer
+// ─────────────────────────────────────────────────────────────────────────────
+model workOfferItem {
+  id                     Int       @id @default(autoincrement())
+  workOfferId            Int
+  workId                 Int
+  /// Override price at offer time (may differ from work.unitPrice)
+  unitPrice              Decimal   @db.Decimal(20, 4)
+  amount                 Decimal   @db.Decimal(20, 4)
+  totalPrice             Decimal   @db.Decimal(20, 4)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime?  @updatedAt
+  deletedAt              DateTime?
+  createdBy              String
+  updatedBy              String?
+  workOffer              workOffer @relation("workOffer", fields: [workOfferId], references: [id])
+  work                   work      @relation("workOfferItemWork", fields: [workId], references: [id])
+  workOfferItemCreatedBy user      @relation("workOfferItemCreatedBy", fields: [createdBy], references: [id])
+  workOfferItemUpdatedBy user?      @relation("workOfferItemUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([workOfferId, workId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task  – operational tasks assigned to team members
+// ─────────────────────────────────────────────────────────────────────────────
+model task {
+  id          Int          @id @default(autoincrement())
+  title       String       @db.VarChar(150)
+  description String?      @db.Text
+  status      taskStatus   @default(TODO)
+  priority    taskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  workId      Int?
+  assigneeId  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime?    @updatedAt
+  deletedAt   DateTime?
+  createdBy   String
+  updatedBy   String?
+  taskWork    work?        @relation("workTask", fields: [workId], references: [id])
+  taskCreatedBy user       @relation("taskCreatedBy", fields: [createdBy], references: [id])
+  taskUpdatedBy user?      @relation("taskUpdatedBy", fields: [updatedBy], references: [id])
+  taskAssignee  user?      @relation("taskAssignee", fields: [assigneeId], references: [id])
+
+  @@index([status])
+  @@index([priority])
+  @@index([assigneeId])
+  @@index([workId])
+  @@index([deletedAt])
+}

@@ -1,0 +1,91 @@
+model rfq {
+  id               Int            @id @default(autoincrement())
+  vendorId         Int
+  number           String         @unique
+  title            String
+  date             DateTime       @default(now())
+  dueDate          DateTime       @default(now())
+  replyNumber      String?        @unique
+  replyDate        DateTime?
+  replyExpiredDate DateTime?
+  replyNotes       String?        @db.Text
+  status           orderStatus
+  notes            String?        @db.Text
+  createdBy        String
+  updatedBy        String?
+  deletedAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime?       @updatedAt
+  rfqCreatedBy     user           @relation("rfqCreatedBy", fields: [createdBy], references: [id])
+  rfqUpdatedBy     user?           @relation("rfqUpdatedBy", fields: [updatedBy], references: [id])
+  rfqProducts      rfqProduct[]   @relation("rfq")
+  rfqVendor        vendor         @relation("rfqVendor", fields: [vendorId], references: [id])
+  purchaseOrder    purchaseOrder? @relation("purchaseOrderReference")
+}
+
+model rfqProduct {
+  id               Int       @id @default(autoincrement())
+  rfqId            Int
+  productId        Int
+  unitId           Int?
+  unit             unit?     @relation("rfqProductUnit", fields: [unitId], references: [id])
+  quantity         Decimal   @db.Decimal(20, 4)
+  replyPrice       Decimal   @default(0) @db.Decimal(20, 4)
+  notes            String?   @db.Text
+  createdBy        String
+  updatedBy        String?
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime?  @updatedAt
+  rfq              rfq       @relation("rfq", fields: [rfqId], references: [id])
+  rfqProduct       product   @relation("rfqProduct", fields: [productId], references: [id])
+  rfqItemCreatedBy user      @relation("rfqProductCreatedBy", fields: [createdBy], references: [id])
+  rfqItemUpdatedBy user?      @relation("rfqProductUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model purchaseOrder {
+  id                     Int                    @id @default(autoincrement())
+  rfqId                  Int                    @unique
+  vendorId               Int
+  number                 String                 @unique
+  title                  String
+  date                   DateTime               @default(now())
+  dueDate                DateTime               @default(now())
+  totalAmount            Decimal                @default(0) @db.Decimal(20, 4)
+  status                 orderStatus
+  notes                  String?                @db.Text
+  destinationFacilityId  Int?
+  createdBy              String
+  updatedBy              String?
+  deletedAt              DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime?               @updatedAt
+  purchaseOrderCreatedBy user                   @relation("purchaseOrderCreatedBy", fields: [createdBy], references: [id])
+  purchaseOrderUpdatedBy user?                   @relation("purchaseOrderUpdatedBy", fields: [updatedBy], references: [id])
+  purchaseOrderReference rfq                    @relation("purchaseOrderReference", fields: [rfqId], references: [id])
+  purchaseOrderProducts  purchaseOrderProduct[] @relation("purchaseOrder")
+  purchaseOrderVendor    vendor                 @relation("purchaseOrderVendor", fields: [vendorId], references: [id])
+  destinationFacility    facility?              @relation("purchaseOrderDestinationFacility", fields: [destinationFacilityId], references: [id], onDelete: SetNull)
+
+  @@index([destinationFacilityId])
+}
+
+model purchaseOrderProduct {
+  id                            Int           @id @default(autoincrement())
+  purchaseOrderId               Int
+  productId                     Int
+  unitId                        Int?
+  unit                          unit?         @relation("purchaseOrderProductUnit", fields: [unitId], references: [id])
+  quantity                      Decimal       @db.Decimal(20, 4)
+  price                         Decimal       @default(0) @db.Decimal(20, 4)
+  notes                         String?       @db.Text
+  createdBy                     String
+  updatedBy                     String?
+  deletedAt                     DateTime?
+  createdAt                     DateTime      @default(now())
+  updatedAt                     DateTime?      @updatedAt
+  purchaseOrderProduct          product       @relation("purchaseOrderProduct", fields: [productId], references: [id])
+  purchaseOrder                 purchaseOrder @relation("purchaseOrder", fields: [purchaseOrderId], references: [id])
+  purchaseOrderProductCreatedBy user          @relation("purchaseOrderProductCreatedBy", fields: [createdBy], references: [id])
+  purchaseOrderProductUpdatedBy user?          @relation("purchaseOrderProductUpdatedBy", fields: [updatedBy], references: [id])
+}

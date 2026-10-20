@@ -1,0 +1,144 @@
+import type { ApiClient } from "../api/client";
+import type { ApiSuccess, Paginated } from "../api/types";
+import type { z } from "zod";
+import type {
+    createSalesOrderSchema,
+    updateSalesOrderSchema,
+    salesOrderQuerySchema,
+    createSalesOrderItemSchema,
+    updateSalesOrderItemSchema,
+    createSalesPaymentSchema,
+    updateSalesPaymentSchema,
+    productSalesReportSchema,
+    SalesOrderRecord,
+    SalesOrderItemRecord,
+    SalesPaymentRecord,
+    DailySalesSummaryResult,
+    ProductSalesItemReport,
+    CreateTableOrderInput,
+    PayTableOrderInput,
+    GetTableOrderStatusInput,
+    TableOrderStatusResponse,
+    TableMenuResponse,
+    CheckTableDinerInput,
+    CheckTableDinerResult,
+    SendTableReceiptInput,
+    SendTableReceiptResult,
+    MidtransSnapTokenInput,
+    MidtransChargeInput,
+    MidtransConfigResponse,
+    MidtransSnapTokenResult,
+    MidtransChargeResult,
+    MidtransStatusResult,
+} from "./schemas";
+
+export function createPosApi(client: ApiClient) {
+    return {
+        // ── Table Order (Public / Barcode Table Self-Ordering) ────────────────
+        async getTableMenu(facilityId?: number): Promise<ApiSuccess<TableMenuResponse>> {
+            return client.get<TableMenuResponse>("/api/pos/table-order/menu", facilityId ? { facilityId } : undefined);
+        },
+        async createTableOrder(input: CreateTableOrderInput): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/table-order/create", input);
+        },
+        async payTableOrder(input: PayTableOrderInput): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/table-order/pay", input);
+        },
+        async getTableOrderStatus(salesOrderId: number): Promise<ApiSuccess<TableOrderStatusResponse>> {
+            return client.get<TableOrderStatusResponse>("/api/pos/table-order/status", { salesOrderId });
+        },
+        async checkTableDiner(input: CheckTableDinerInput): Promise<ApiSuccess<CheckTableDinerResult>> {
+            return client.get<CheckTableDinerResult>("/api/pos/table-order/check-diner", input);
+        },
+        async sendTableReceipt(input: SendTableReceiptInput): Promise<ApiSuccess<SendTableReceiptResult>> {
+            return client.post<SendTableReceiptResult>("/api/pos/table-order/send-receipt", input);
+        },
+        async sendReceipt(input: SendTableReceiptInput): Promise<ApiSuccess<SendTableReceiptResult>> {
+            return client.post<SendTableReceiptResult>("/api/pos/sales-order/send-receipt", input);
+        },
+
+        // ── Sales Orders ──────────────────────────────────────────────────────
+        async createSalesOrder(input: z.infer<typeof createSalesOrderSchema>): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/create", input);
+        },
+        async updateSalesOrder(input: z.infer<typeof updateSalesOrderSchema>): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/update", input);
+        },
+        async deleteSalesOrder(id: number): Promise<ApiSuccess<void>> {
+            return client.post<void>("/api/pos/sales-order/delete", { id });
+        },
+        async getSalesOrder(id: number): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/get", { id });
+        },
+        async listSalesOrders(query?: z.infer<typeof salesOrderQuerySchema>): Promise<Paginated<SalesOrderRecord>> {
+            return client.list<SalesOrderRecord>("/api/pos/sales-order/all", query);
+        },
+        async completeSalesOrder(id: number): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/complete", { id });
+        },
+        async voidSalesOrder(id: number, notes?: string | null): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/void", { id, notes });
+        },
+        async refundSalesOrder(id: number, notes?: string | null): Promise<ApiSuccess<SalesOrderRecord>> {
+            return client.post<SalesOrderRecord>("/api/pos/sales-order/refund", { id, notes });
+        },
+        async getDailySummary(query?: { date?: string; startDate?: string; endDate?: string; facilityId?: number } | string): Promise<ApiSuccess<DailySalesSummaryResult>> {
+            const params = typeof query === "string" ? { date: query } : query;
+            return client.get<DailySalesSummaryResult>("/api/pos/sales-order/summary/daily", params as Record<string, unknown> | undefined);
+        },
+        async getProductSalesReport(query?: z.infer<typeof productSalesReportSchema>): Promise<ApiSuccess<ProductSalesItemReport[]>> {
+            return client.get<ProductSalesItemReport[]>("/api/pos/sales-order/report/product-sales", query as Record<string, unknown>);
+        },
+
+        // ── Sales Order Items ─────────────────────────────────────────────────
+        async createItem(input: z.infer<typeof createSalesOrderItemSchema>): Promise<ApiSuccess<SalesOrderItemRecord>> {
+            return client.post<SalesOrderItemRecord>("/api/pos/sales-order-item/create", input);
+        },
+        async updateItem(input: z.infer<typeof updateSalesOrderItemSchema>): Promise<ApiSuccess<SalesOrderItemRecord>> {
+            return client.post<SalesOrderItemRecord>("/api/pos/sales-order-item/update", input);
+        },
+        async deleteItem(id: number): Promise<ApiSuccess<void>> {
+            return client.post<void>("/api/pos/sales-order-item/delete", { id });
+        },
+        async getItem(id: number): Promise<ApiSuccess<SalesOrderItemRecord>> {
+            return client.post<SalesOrderItemRecord>("/api/pos/sales-order-item/get", { id });
+        },
+        async listItems(salesOrderId: number): Promise<ApiSuccess<SalesOrderItemRecord[]>> {
+            return client.post<SalesOrderItemRecord[]>("/api/pos/sales-order-item/list", { salesOrderId });
+        },
+
+        // ── Sales Payments ────────────────────────────────────────────────────
+        async createPayment(input: z.infer<typeof createSalesPaymentSchema>): Promise<ApiSuccess<SalesPaymentRecord>> {
+            return client.post<SalesPaymentRecord>("/api/pos/sales-payment/create", input);
+        },
+        async updatePayment(input: z.infer<typeof updateSalesPaymentSchema>): Promise<ApiSuccess<SalesPaymentRecord>> {
+            return client.post<SalesPaymentRecord>("/api/pos/sales-payment/update", input);
+        },
+        async deletePayment(id: number): Promise<ApiSuccess<void>> {
+            return client.post<void>("/api/pos/sales-payment/delete", { id });
+        },
+        async getPayment(id: number): Promise<ApiSuccess<SalesPaymentRecord>> {
+            return client.post<SalesPaymentRecord>("/api/pos/sales-payment/get", { id });
+        },
+        async listPayments(salesOrderId: number): Promise<ApiSuccess<SalesPaymentRecord[]>> {
+            return client.post<SalesPaymentRecord[]>("/api/pos/sales-payment/list", { salesOrderId });
+        },
+
+        // ── Midtrans Payment Gateway ──────────────────────────────────────────
+        async getMidtransConfig(): Promise<ApiSuccess<MidtransConfigResponse>> {
+            return client.get<MidtransConfigResponse>("/api/pos/midtrans/config");
+        },
+        async createMidtransSnapToken(input: MidtransSnapTokenInput): Promise<ApiSuccess<MidtransSnapTokenResult>> {
+            return client.post<MidtransSnapTokenResult>("/api/pos/midtrans/snap-token", input);
+        },
+        async createMidtransCharge(input: MidtransChargeInput): Promise<ApiSuccess<MidtransChargeResult>> {
+            return client.post<MidtransChargeResult>("/api/pos/midtrans/charge", input);
+        },
+        async getMidtransStatus(orderNumberOrId: string | number): Promise<ApiSuccess<MidtransStatusResult>> {
+            return client.get<MidtransStatusResult>(`/api/pos/midtrans/status/${orderNumberOrId}`);
+        },
+        async simulateMidtransPayment(salesOrderId: number, paymentType = "qris"): Promise<ApiSuccess<any>> {
+            return client.post<any>("/api/pos/midtrans/simulate-payment", { salesOrderId, paymentType });
+        },
+    };
+}

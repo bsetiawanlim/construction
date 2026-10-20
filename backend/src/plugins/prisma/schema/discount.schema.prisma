@@ -1,0 +1,55 @@
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Discount / Promo Codes
+/// ─────────────────────────────────────────────────────────────────────────────
+
+enum discountType {
+  PERCENTAGE    // e.g. 10% off
+  FIXED_AMOUNT  // e.g. flat Rp 5,000 off
+}
+
+/// discount — a reusable promo or automatic discount rule
+model discount {
+  id                Int           @id @default(autoincrement())
+
+  /// Human-readable name, e.g. "Weekend Special"
+  name              String        @db.VarChar(100)
+
+  /// Optional promo code customers enter; null = auto-applied at checkout
+  code              String?       @unique @db.VarChar(50)
+
+  description       String?       @db.Text
+
+  discountType      discountType
+
+  /// Percentage (0-100) or fixed IDR amount, depending on discountType
+  value             Decimal       @db.Decimal(10, 4)
+
+  /// Maximum discount cap when discountType = PERCENTAGE (null = no cap)
+  maxDiscountAmount Decimal?      @db.Decimal(20, 4)
+
+  /// Minimum order subtotal required to apply this discount
+  minOrderAmount    Decimal?      @db.Decimal(20, 4)
+
+  isActive          Boolean       @default(true)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+
+  /// null = unlimited total uses
+  maxUsageCount     Int?
+  usageCount        Int           @default(0)
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime?     @updatedAt
+  deletedAt         DateTime?
+  createdBy         String?
+  updatedBy         String?
+
+  createdByUser     user?         @relation("discountCreatedBy",  fields: [createdBy], references: [id])
+  updatedByUser     user?         @relation("discountUpdatedBy",  fields: [updatedBy], references: [id])
+  salesOrders       salesOrder[]  @relation("salesOrderDiscount")
+
+  @@index([code])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@index([deletedAt])
+}

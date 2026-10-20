@@ -1,0 +1,60 @@
+/// A kitchen / production work order: converts formula raw materials into finished stock in bulk.
+/// Example: bake 24 cheesecakes ahead of service -> consumes flour, cream cheese, eggs; adds 24 cheesecakes to stock.
+model productionBatch {
+  id                       Int                   @id @default(autoincrement())
+  batchNumber              String                @unique @db.VarChar(50)
+  productId                Int
+  quantity                 Decimal               @db.Decimal(20, 4)
+  unitLabel                String?               @db.VarChar(20)
+  status                   productionBatchStatus @default(PLANNED)
+  facilityId               Int?
+  personInChargeId         Int?
+  confirmedAt              DateTime?
+  confirmedBy              String?
+  materialCost             Decimal               @default(0) @db.Decimal(20, 4)
+  laborCost                Decimal               @default(0) @db.Decimal(20, 4)
+  equipmentCost            Decimal               @default(0) @db.Decimal(20, 4)
+  totalCost                Decimal               @default(0) @db.Decimal(20, 4)
+  unitCost                 Decimal               @default(0) @db.Decimal(20, 4)
+  notes                    String?               @db.Text
+  producedAt               DateTime?
+  cancelledAt              DateTime?
+  cancelReason             String?               @db.Text
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime?             @updatedAt
+  deletedAt                DateTime?
+  createdBy                String
+  updatedBy                String?
+
+  product                  product               @relation("productProductionBatch", fields: [productId], references: [id])
+  facility                 facility?             @relation("facilityProductionBatches", fields: [facilityId], references: [id], onDelete: SetNull)
+  personInCharge           employee?             @relation("productionPersonInCharge", fields: [personInChargeId], references: [id], onDelete: SetNull)
+  confirmedByUser          user?                 @relation("productionBatchConfirmedBy", fields: [confirmedBy], references: [id], onDelete: SetNull)
+  items                    productionBatchItem[] @relation("productionBatchItems")
+  productionBatchCreatedBy user                  @relation("productionBatchCreatedBy", fields: [createdBy], references: [id])
+  productionBatchUpdatedBy user?                 @relation("productionBatchUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([productId])
+  @@index([facilityId])
+  @@index([personInChargeId])
+  @@index([status])
+}
+
+/// Snapshot of each raw material consumed by a production batch (quantities and costs frozen at production time).
+model productionBatchItem {
+  id                  Int             @id @default(autoincrement())
+  batchId             Int
+  ingredientProductId Int
+  quantityPerUnit     Decimal         @db.Decimal(20, 4)
+  quantityConsumed    Decimal         @db.Decimal(20, 4)
+  unitLabel           String?         @db.VarChar(20)
+  unitCost            Decimal         @default(0) @db.Decimal(20, 4)
+  lineCost            Decimal         @default(0) @db.Decimal(20, 4)
+  createdAt           DateTime        @default(now())
+
+  batch               productionBatch @relation("productionBatchItems", fields: [batchId], references: [id], onDelete: Cascade)
+  ingredient          product         @relation("ingredientProductionBatchItem", fields: [ingredientProductId], references: [id])
+
+  @@index([batchId])
+  @@index([ingredientProductId])
+}

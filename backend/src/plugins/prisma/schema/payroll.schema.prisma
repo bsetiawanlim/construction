@@ -1,0 +1,125 @@
+enum payrollStructureType {
+  basic
+  allowance
+  deduction
+}
+
+enum payrollCalculationType {
+  percentage
+  fixedAmount
+  perDay
+  perHour
+}
+
+enum payrollFrequency {
+  hourly
+  daily
+  weekly
+  biWeekly
+  monthly
+}
+
+enum payrollPeriodStatus {
+  DRAFT
+  PROCESSING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum salaryRecordStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model payrollPeriod {
+  id                      Int                 @id @default(autoincrement())
+  name                    String              @db.VarChar(100)
+  frequency               payrollFrequency    @default(monthly)
+  startDate               DateTime
+  endDate                 DateTime
+  paymentDate             DateTime?
+  status                  payrollPeriodStatus @default(DRAFT)
+  notes                   String?             @db.Text
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime?           @updatedAt
+  deletedAt               DateTime?
+  createdBy               String
+  updatedBy               String?
+  salaryRecords           salaryRecord[]      @relation("payrollPeriodSalaryRecords")
+  payrollPeriodCreatedBy  user                @relation("payrollPeriodCreatedBy", fields: [createdBy], references: [id])
+  payrollPeriodUpdatedBy  user?               @relation("payrollPeriodUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model payrollComponent {
+  id                         Int                     @id @default(autoincrement())
+  name                       String                  @db.VarChar(100)
+  type                       payrollStructureType
+  calculationType            payrollCalculationType
+  defaultAmount              Decimal                 @default(0) @db.Decimal(20, 4)
+  isTaxable                  Boolean                 @default(true)
+  description                String?                 @db.VarChar(255)
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime?               @updatedAt
+  deletedAt                  DateTime?
+  createdBy                  String
+  updatedBy                  String?
+  salaryRecordDetails        salaryRecordDetail[]    @relation("componentSalaryRecordDetails")
+  payrollComponentCreatedBy  user                    @relation("payrollComponentCreatedBy", fields: [createdBy], references: [id])
+  payrollComponentUpdatedBy  user?                   @relation("payrollComponentUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([type])
+  @@index([deletedAt])
+}
+
+model salaryRecord {
+  id                    Int                  @id @default(autoincrement())
+  periodId              Int
+  employeeId            Int
+  salaryBasis           payrollFrequency?
+  payFrequency          payrollFrequency?
+  basicSalary           Decimal              @default(0) @db.Decimal(20, 4)
+  totalAllowances       Decimal              @default(0) @db.Decimal(20, 4)
+  totalDeductions       Decimal              @default(0) @db.Decimal(20, 4)
+  netSalary             Decimal              @default(0) @db.Decimal(20, 4)
+  status                salaryRecordStatus   @default(PENDING)
+  notes                 String?              @db.Text
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime?            @updatedAt
+  deletedAt             DateTime?
+  createdBy             String
+  updatedBy             String?
+  period                payrollPeriod        @relation("payrollPeriodSalaryRecords", fields: [periodId], references: [id])
+  employee              employee             @relation("employeeSalaryRecords", fields: [employeeId], references: [id])
+  details               salaryRecordDetail[] @relation("salaryRecordDetails")
+  salaryRecordCreatedBy user                 @relation("salaryRecordCreatedBy", fields: [createdBy], references: [id])
+  salaryRecordUpdatedBy user?                @relation("salaryRecordUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([periodId, employeeId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([periodId])
+  @@index([employeeId])
+}
+
+model salaryRecordDetail {
+  id             Int              @id @default(autoincrement())
+  salaryRecordId Int
+  componentId    Int
+  amount         Decimal          @db.Decimal(20, 4)
+  notes          String?          @db.VarChar(255)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime?        @updatedAt
+  deletedAt      DateTime?
+  salaryRecord   salaryRecord     @relation("salaryRecordDetails", fields: [salaryRecordId], references: [id])
+  component      payrollComponent @relation("componentSalaryRecordDetails", fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@unique([salaryRecordId, componentId])
+  @@index([salaryRecordId])
+  @@index([componentId])
+}

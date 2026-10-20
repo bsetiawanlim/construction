@@ -1,0 +1,146 @@
+/// ─────────────────────────────────────────────────────────────────────────────
+/// POS — Point of Sale enums
+/// ─────────────────────────────────────────────────────────────────────────────
+
+enum salesOrderStatus {
+  DRAFT       // Order being assembled (items added)
+  COMPLETED   // Paid and finalized
+  VOID        // Cancelled before completion
+  REFUNDED    // Returned after completion
+}
+
+enum paymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  EWALLET
+}
+
+enum paymentStatus {
+  PENDING
+  SETTLED
+  FAILED
+  REFUNDED
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Sales Order — the main POS transaction
+/// ─────────────────────────────────────────────────────────────────────────────
+model salesOrder {
+  id                  Int               @id @default(autoincrement())
+  /// Human-readable order number, e.g. SO-20261003-001
+  orderNumber         String            @unique @db.VarChar(50)
+  /// Optional customer reference (walk-in sales may not have one)
+  customerId          Int?
+  orderDate           DateTime          @default(now())
+
+  // ── Pricing ──
+  /// Raw subtotal (sum of salesOrderItem.totalPrice)
+  subtotal            Decimal           @db.Decimal(20, 4)
+
+  /// Discount applied at the order level (before tax)
+  includeDiscount     Boolean           @default(false)
+  discountPercentage  Decimal           @default(0) @db.Decimal(10, 4)
+  discountAmount      Decimal           @default(0) @db.Decimal(20, 4)
+
+  /// Tax (applied after discount)
+  includeTax          Boolean           @default(false)
+  taxPercentage       Decimal           @default(0) @db.Decimal(10, 4)
+  taxAmount           Decimal           @default(0) @db.Decimal(20, 4)
+
+  /// Final amount payable
+  grandTotal          Decimal           @db.Decimal(20, 4)
+
+  /// ISO 4217 currency code
+  currency            String            @default("IDR") @db.VarChar(3)
+  status              salesOrderStatus  @default(DRAFT)
+  notes               String?           @db.Text
+  facilityId          Int?
+  tableNumber         String?           @db.VarChar(50)
+
+  /// Applied discount rule (optional)
+  discountId          Int?
+  /// Snapshot of the promo code used (for auditing)
+  promoCode           String?           @db.VarChar(50)
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime?         @updatedAt
+  deletedAt           DateTime?
+  createdBy           String?
+  updatedBy           String?
+
+  customer            customer?         @relation("salesOrderCustomer", fields: [customerId], references: [id])
+  facility            facility?         @relation(fields: [facilityId], references: [id], onDelete: SetNull)
+  discount            discount?         @relation("salesOrderDiscount", fields: [discountId], references: [id], onDelete: SetNull)
+  items               salesOrderItem[]  @relation("salesOrderItems")
+  payments            salesPayment[]    @relation("salesOrderPayments")
+  salesOrderCreatedBy user?             @relation("salesOrderCreatedBy", fields: [createdBy], references: [id])
+  salesOrderUpdatedBy user?             @relation("salesOrderUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([status])
+  @@index([orderDate])
+  @@index([customerId])
+  @@index([facilityId])
+  @@index([tableNumber])
+  @@index([deletedAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Sales Order Item — individual line items in a sale
+/// ─────────────────────────────────────────────────────────────────────────────
+model salesOrderItem {
+  id                  Int           @id @default(autoincrement())
+  salesOrderId        Int
+  productId           Int
+  /// Snapshot of product name at time of sale (in case product name changes later)
+  productName         String        @db.VarChar(200)
+  unitId              Int?
+  quantity            Decimal       @db.Decimal(20, 4)
+  unitPrice           Decimal       @db.Decimal(20, 4)
+
+  /// Per-item discount
+  discountPercentage  Decimal       @default(0) @db.Decimal(10, 4)
+  discountAmount      Decimal       @default(0) @db.Decimal(20, 4)
+
+  /// quantity × unitPrice − discountAmount
+  totalPrice          Decimal       @db.Decimal(20, 4)
+  notes               String?       @db.Text
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime?     @updatedAt
+  deletedAt           DateTime?
+
+  salesOrder          salesOrder    @relation("salesOrderItems", fields: [salesOrderId], references: [id])
+  product             product       @relation("salesOrderProduct", fields: [productId], references: [id])
+  unit                unit?         @relation("salesOrderItemUnit", fields: [unitId], references: [id])
+
+  @@index([salesOrderId])
+  @@index([productId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Sales Payment — payment(s) for a sales order (supports split payment)
+/// ─────────────────────────────────────────────────────────────────────────────
+model salesPayment {
+  id                  Int             @id @default(autoincrement())
+  salesOrderId        Int
+  method              paymentMethod
+  amount              Decimal         @db.Decimal(20, 4)
+  /// Change given back to customer (for CASH overpayment)
+  changeAmount        Decimal         @default(0) @db.Decimal(20, 4)
+  /// External reference (card auth code, transfer ref, e-wallet txn ID)
+  referenceNumber     String?         @db.VarChar(100)
+  /// Optional link to monetary account for reconciliation
+  monetaryAccountId   Int?
+  status              paymentStatus   @default(PENDING)
+  notes               String?         @db.Text
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime?       @updatedAt
+  deletedAt           DateTime?
+
+  salesOrder          salesOrder      @relation("salesOrderPayments", fields: [salesOrderId], references: [id])
+  monetaryAccount     monetaryAccount? @relation("salesPaymentAccount", fields: [monetaryAccountId], references: [id])
+
+  @@index([salesOrderId])
+  @@index([method])
+  @@index([status])
+}

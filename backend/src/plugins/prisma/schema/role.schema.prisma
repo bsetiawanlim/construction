@@ -1,0 +1,59 @@
+model role {
+  id            Int       @id @default(autoincrement())
+  roleName      String    @db.VarChar(100)
+  roleAbbr      String    @db.VarChar(10)
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  createdBy     String
+  roleCreatedBy user      @relation("roleCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  roleUpdatedBy user?      @relation("roleUpdatedBy", fields: [updatedBy], references: [id])
+  user          user[]    @relation("roleId")
+  permissions             permission[]               @relation("permissionRole")
+  facilityPermissions     roleFacilityPermission[]   @relation("roleFacilityPermissions")
+}
+
+model permission {
+  id                  Int       @id @default(autoincrement())
+  roleId              Int
+  role                role      @relation("permissionRole", fields: [roleId], references: [id])
+  tableName           String
+  actionName          String
+  createdBy           String
+  updatedBy           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime?  @updatedAt
+  deletedAt           DateTime?
+  permissionCreatedBy user      @relation("permissionCreatedBy", fields: [createdBy], references: [id])
+  permissionUpdatedBy user?      @relation("permissionUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([roleId, tableName, actionName])
+  @@map("permission")
+}
+
+/// Facility-specific Permission Matrix: controls which physical facilities each role can access/manage
+model roleFacilityPermission {
+  id                  Int       @id @default(autoincrement())
+  roleId              Int
+  facilityId          Int
+  canView             Boolean   @default(true)
+  canManageStock      Boolean   @default(false)
+  canTransact         Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime? @updatedAt
+  deletedAt           DateTime?
+  createdBy           String
+  updatedBy           String?
+
+  role                role      @relation("roleFacilityPermissions", fields: [roleId], references: [id], onDelete: Cascade)
+  facility            facility  @relation("facilityRolePermissions", fields: [facilityId], references: [id], onDelete: Cascade)
+  permissionCreatedBy user      @relation("roleFacilityCreatedBy", fields: [createdBy], references: [id])
+  permissionUpdatedBy user?     @relation("roleFacilityUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([roleId, facilityId])
+  @@index([roleId])
+  @@index([facilityId])
+  @@map("roleFacilityPermission")
+}

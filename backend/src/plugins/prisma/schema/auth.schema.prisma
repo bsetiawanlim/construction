@@ -1,0 +1,212 @@
+model account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime?  @updatedAt
+  deletedAt             DateTime?
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
+}
+
+model user {
+  id            String    @id
+  name          String
+  email         String    @unique
+  profileId     Int?      
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?  @updatedAt
+  deletedAt     DateTime?
+  isSuperAdmin  Boolean   @default(false)
+  roleId        Int?
+  account       account[]
+  session       session[]
+  createdBy     String?
+  userCreatedBy user?     @relation("userCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  userUpdatedBy user?     @relation("userUpdatedBy", fields: [updatedBy], references: [id])
+  role          role?     @relation("roleId", fields: [roleId], references: [id])
+  userProfile   profile?  @relation("userProfile", fields: [profileId], references: [id])
+
+  userCreated                    user[]                         @relation("userCreatedBy")
+  userUpdated                    user[]                         @relation("userUpdatedBy")
+  customerCreated                customer[]                     @relation("customerCreatedBy")
+  customerUpdated                customer[]                     @relation("customerUpdatedBy")
+  employeeCreated                employee[]                     @relation("employeeCreatedBy")
+  employeeUpdated                employee[]                     @relation("employeeUpdatedBy")
+  vendorCreated                  vendor[]                       @relation("vendorCreatedBy")
+  vendorUpdated                  vendor[]                       @relation("vendorUpdatedBy")
+  profileCreated                 profile[]                      @relation("profileCreatedBy")
+  profileUpdated                 profile[]                      @relation("profileUpdatedBy")
+  roleCreated                    role[]                         @relation("roleCreatedBy")
+  roleUpdated                    role[]                         @relation("roleUpdatedBy")
+  permissionCreated              permission[]                   @relation("permissionCreatedBy")
+  permissionUpdated              permission[]                   @relation("permissionUpdatedBy")
+  contactPersonCreated           profileContact[]               @relation("contactPersonCreatedBy")
+  contactPersonUpdated           profileContact[]               @relation("contactPersonUpdatedBy")
+  productCreated                 product[]                      @relation("productCreatedBy")
+  productUpdated                 product[]                      @relation("productUpdatedBy")
+  productCategoryCreated         productCategory[]              @relation("productCategoryCreatedBy")
+  productCategoryUpdated         productCategory[]              @relation("productCategoryUpdatedBy")
+  productInventoryCreated        productInventory[]             @relation("productInventoryCreatedBy")
+  productInventoryUpdated        productInventory[]             @relation("productInventoryUpdatedBy")
+  productWasteCreated            productWaste[]                 @relation("productWasteCreatedBy")
+  productWasteUpdated            productWaste[]                 @relation("productWasteUpdatedBy")
+  productPriceCreated            productPrice[]                 @relation("productPriceCreatedBy")
+  productPriceUpdated            productPrice[]                 @relation("productPriceUpdatedBy")
+  productImageCreated            productImage[]                 @relation("productImageCreatedBy")
+  productImageUpdated            productImage[]                 @relation("productImageUpdatedBy")
+  productAttributeCreated        productAttribute[]             @relation("productAttributeCreatedBy")
+  productAttributeUpdated        productAttribute[]             @relation("productAttributeUpdatedBy")
+  productAttributeValueCreated   productAttributeValue[]        @relation("productAttributeValueCreatedBy")
+  productAttributeValueUpdated   productAttributeValue[]        @relation("productAttributeValueUpdatedBy")
+  unitCreated                    unit[]                         @relation("unitCreatedBy")
+  unitUpdated                    unit[]                         @relation("unitUpdatedBy")
+  accountCreated                 monetaryAccount[]              @relation("accountCreatedBy")
+  accountUpdated                 monetaryAccount[]              @relation("accountUpdatedBy")
+  transactionCreated             monetaryTransaction[]          @relation("transactionCreatedBy")
+  transactionUpdated             monetaryTransaction[]          @relation("transactionUpdatedBy")
+  referenceCreated               monetaryTransactionReference[] @relation("referenceCreatedBy")
+  referenceUpdated               monetaryTransactionReference[] @relation("referenceUpdatedBy")
+  workerCreatedBy                worker[]                       @relation("workerCreatedBy")
+  workerUpdatedBy                worker[]                       @relation("workerUpdatedBy")
+  profileDocumentCreated         profileDocument[]              @relation("profileDocumentCreatedBy")
+  profileDocumentUpdated         profileDocument[]              @relation("profileDocumentUpdatedBy")
+  itemCreatedBy                  item[]                         @relation("itemCreatedBy")
+  itemUpdatedBy                  item[]                         @relation("itemUpdatedBy")
+  rfqCreatedBy                   rfq[]                          @relation("rfqCreatedBy")
+  rfqUpdatedBy                   rfq[]                          @relation("rfqUpdatedBy")
+  rfqProductCreatedBy            rfqProduct[]                   @relation("rfqProductCreatedBy")
+  rfqProductUpdatedBy            rfqProduct[]                   @relation("rfqProductUpdatedBy")
+  purchaseOrderCreatedBy         purchaseOrder[]                @relation("purchaseOrderCreatedBy")
+  purchaseOrderUpdatedBy         purchaseOrder[]                @relation("purchaseOrderUpdatedBy")
+  purchaseOrderProductCreatedBy  purchaseOrderProduct[]         @relation("purchaseOrderProductCreatedBy")
+  purchaseOrderProductUpdatedBy  purchaseOrderProduct[]         @relation("purchaseOrderProductUpdatedBy")
+  requestCreatedBy               request[]                      @relation("requestCreatedBy")
+  requestUpdatedBy               request[]                      @relation("requestUpdatedBy")
+  requestProductCreatedBy        requestProduct[]               @relation("requestProductCreatedBy")
+  requestProductUpdatedBy        requestProduct[]               @relation("requestProductUpdatedBy")
+  requestSourceCreatedBy         requestSource[]                @relation("requestSourceCreatedBy")
+  requestSourceUpdatedBy         requestSource[]                @relation("requestSourceUpdatedBy")
+  equipmentCreatedBy             equipmentEntity[]              @relation("equipmentCreatedBy")
+  equipmentUpdatedBy             equipmentEntity[]              @relation("equipmentUpdatedBy")
+  equipmentTypeCreatedBy         equipmentType[]                @relation("equipmentTypeCreatedBy")
+  equipmentTypeUpdatedBy         equipmentType[]                @relation("equipmentTypeUpdatedBy")
+  equipmentBrandCreatedBy        equipmentBrand[]               @relation("equipmentBrandCreatedBy")
+  equipmentBrandUpdatedBy        equipmentBrand[]               @relation("equipmentBrandUpdatedBy")
+  equipmentModelCreatedBy        equipmentModel[]               @relation("equipmentModelCreatedBy")
+  equipmentModelUpdatedBy        equipmentModel[]               @relation("equipmentModelUpdatedBy")
+  equipmentModelFeatureCreatedBy equipmentModelFeature[]        @relation("equipmentModelFeatureCreatedBy")
+  equipmentModelFeatureUpdatedBy equipmentModelFeature[]        @relation("equipmentModelFeatureUpdatedBy")
+  equipmentFeatureCreatedBy      equipmentFeature[]             @relation("equipmentFeatureCreatedBy")
+  equipmentFeatureUpdatedBy      equipmentFeature[]             @relation("equipmentFeatureUpdatedBy")
+  equipmentMaintenanceCreatedBy  equipmentMaintenance[]         @relation("equipmentMaintenanceCreatedBy")
+  equipmentMaintenanceUpdatedBy  equipmentMaintenance[]         @relation("equipmentMaintenanceUpdatedBy")
+  equipmentPartCreatedBy         equipmentPart[]                @relation("equipmentPartCreatedBy")
+  equipmentPartUpdatedBy         equipmentPart[]                @relation("equipmentPartUpdatedBy")
+  workCreatedBy                  work[]                         @relation("workCreatedBy")
+  workUpdatedBy                  work[]                         @relation("workUpdatedBy")
+  workEquipmentCreatedBy         workEquipment[]                @relation("workEquipmentCreatedBy")
+  workEquipmentUpdatedBy         workEquipment[]                @relation("workEquipmentUpdatedBy")
+  equipmentPriceCreatedBy        equipmentPrice[]               @relation("equipmentPriceCreatedBy")
+  equipmentPriceUpdatedBy        equipmentPrice[]               @relation("equipmentPriceUpdatedBy")
+  workWorkerCreatedBy            workWorker[]                   @relation("workWorkerCreatedBy")
+  workWorkerUpdatedBy            workWorker[]                   @relation("workWorkerUpdatedBy")
+  workItemCreatedBy              workItem[]                     @relation("workItemCreatedBy")
+  workItemUpdatedBy             workItem[]                     @relation("workItemUpdatedBy")
+  workOfferCreatedBy             workOffer[]                    @relation("workOfferCreatedBy")
+  workOfferUpdatedBy             workOffer[]                    @relation("workOfferUpdatedBy")
+  workOfferItemCreatedBy         workOfferItem[]                @relation("workOfferItemCreatedBy")
+  workOfferItemUpdatedBy         workOfferItem[]                @relation("workOfferItemUpdatedBy")
+  positionCreatedBy              position[]                     @relation("positionCreatedBy")
+  positionUpdatedBy              position[]                     @relation("positionUpdatedBy")
+  taskCreatedBy                  task[]                         @relation("taskCreatedBy")
+  taskUpdatedBy                  task[]                         @relation("taskUpdatedBy")
+  taskAssignee                   task[]                         @relation("taskAssignee")
+  payrollPeriodCreatedBy         payrollPeriod[]                @relation("payrollPeriodCreatedBy")
+  payrollPeriodUpdatedBy         payrollPeriod[]                @relation("payrollPeriodUpdatedBy")
+  payrollComponentCreatedBy      payrollComponent[]             @relation("payrollComponentCreatedBy")
+  payrollComponentUpdatedBy      payrollComponent[]             @relation("payrollComponentUpdatedBy")
+  salaryRecordCreatedBy          salaryRecord[]                 @relation("salaryRecordCreatedBy")
+  salaryRecordUpdatedBy          salaryRecord[]                 @relation("salaryRecordUpdatedBy")
+  vehicleCreatedBy               vehicle[]                      @relation("vehicleCreatedBy")
+  vehicleUpdatedBy               vehicle[]                      @relation("vehicleUpdatedBy")
+  driverCreatedBy                driver[]                       @relation("driverCreatedBy")
+  driverUpdatedBy                driver[]                       @relation("driverUpdatedBy")
+  tripCreatedBy                  trip[]                         @relation("tripCreatedBy")
+  tripUpdatedBy                  trip[]                         @relation("tripUpdatedBy")
+  fuelLogCreatedBy               fuelLog[]                      @relation("fuelLogCreatedBy")
+  fuelLogUpdatedBy               fuelLog[]                      @relation("fuelLogUpdatedBy")
+  salesOrderCreatedBy            salesOrder[]                   @relation("salesOrderCreatedBy")
+  salesOrderUpdatedBy            salesOrder[]                   @relation("salesOrderUpdatedBy")
+  profileSocialMediaCreated      profileSocialMedia[]           @relation("profileSocialMediaCreatedBy")
+  profileSocialMediaUpdated      profileSocialMedia[]           @relation("profileSocialMediaUpdatedBy")
+  vendorProductCreated           vendorProduct[]                @relation("vendorProductCreatedBy")
+  vendorProductUpdated           vendorProduct[]                @relation("vendorProductUpdatedBy")
+  productRecipeCreated           productRecipe[]                @relation("productRecipeCreatedBy")
+  productRecipeUpdated           productRecipe[]                @relation("productRecipeUpdatedBy")
+  attendanceCreated              attendance[]                   @relation("attendanceCreatedBy")
+  attendanceUpdated              attendance[]                   @relation("attendanceUpdatedBy")
+  productionBatchCreated         productionBatch[]              @relation("productionBatchCreatedBy")
+  productionBatchUpdated         productionBatch[]              @relation("productionBatchUpdatedBy")
+  productionBatchConfirmed       productionBatch[]              @relation("productionBatchConfirmedBy")
+  facilityCreated                facility[]                     @relation("facilityCreatedBy")
+  facilityUpdated                facility[]                     @relation("facilityUpdatedBy")
+  facilitySectionCreated         facilitySection[]              @relation("facilitySectionCreatedBy")
+  facilitySectionUpdated         facilitySection[]              @relation("facilitySectionUpdatedBy")
+  roleFacilityCreated            roleFacilityPermission[]       @relation("roleFacilityCreatedBy")
+  roleFacilityUpdated            roleFacilityPermission[]       @relation("roleFacilityUpdatedBy")
+  facilityEmployeeCreated        facilityEmployee[]             @relation("facilityEmployeeCreatedBy")
+  facilityEmployeeUpdated        facilityEmployee[]             @relation("facilityEmployeeUpdatedBy")
+  facilityProductCreated         facilityProduct[]              @relation("facilityProductCreatedBy")
+  facilityProductUpdated         facilityProduct[]              @relation("facilityProductUpdatedBy")
+  facilityEquipmentCreated       facilityEquipment[]            @relation("facilityEquipmentCreatedBy")
+  facilityEquipmentUpdated       facilityEquipment[]            @relation("facilityEquipmentUpdatedBy")
+  facilityTableCreated           facilityTable[]                @relation("facilityTableCreatedBy")
+  facilityTableUpdated           facilityTable[]                @relation("facilityTableUpdatedBy")
+  discountCreatedBy              discount[]                     @relation("discountCreatedBy")
+  discountUpdatedBy              discount[]                     @relation("discountUpdatedBy")
+  shiftsOpened                   shift[]                        @relation("shiftOpenedBy")
+  shiftsClosed                   shift[]                        @relation("shiftClosedBy")
+  schedulesCreated               employeeSchedule[]             @relation("scheduleCreatedBy")
+  schedulesUpdated               employeeSchedule[]             @relation("scheduleUpdatedBy")
+}
+
+
+

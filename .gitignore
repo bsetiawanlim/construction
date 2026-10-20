@@ -1,0 +1,26 @@
+node_modules/
+*.exe
+
+# Environment
+.env
+.env.*
+
+# Build outputs
+dist/
+.next/
+.expo/
+.turbo/
+
+# Prisma generated
+/backend/generated/prisma
+/backend/src/plugins/prisma/generated
+
+# Secrets
+githubPAT
+
+# DB backups
+backend/backups/
+
+# OS
+.DS_Store
+Thumbs.db

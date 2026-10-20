@@ -1,0 +1,172 @@
+model equipmentEntity {
+  id                   Int                    @id @default(autoincrement())
+  equipmentTypeId      Int?
+  brandId              Int?
+  modelId              Int?
+  code                 String?
+  name                 String
+  description          String?
+  unitId               Int?
+  unitPrice            Decimal                @db.Decimal(20, 4)
+  salvageValue         Decimal?               @default(0) @db.Decimal(20, 4)
+  usefulLifeYears      Int?                   @default(5)
+  depreciationMethod   String?                @default("STRAIGHT_LINE") @db.VarChar(50)
+  acquisitionDate      DateTime?              @default(now())
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime?               @updatedAt
+  deletedAt            DateTime?
+  createdBy            String
+  updatedBy            String?
+  brand                equipmentBrand?        @relation("equipmentBrand", fields: [brandId], references: [id])
+  model                equipmentModel?        @relation("equipmentModel", fields: [modelId], references: [id])
+  equipmentType        equipmentType?         @relation("equipmentEntityType", fields: [equipmentTypeId], references: [id])
+  unit                 unit?                  @relation("equipmentUnit", fields: [unitId], references: [id])
+  equipmentCreatedBy   user                   @relation("equipmentCreatedBy", fields: [createdBy], references: [id])
+  equipmentUpdatedBy   user?                   @relation("equipmentUpdatedBy", fields: [updatedBy], references: [id])
+  equipmentFeature     equipmentFeature[]     @relation("equipmentFeatureEquipmentEntity")
+  equipmentMaintenance equipmentMaintenance[] @relation("equipmentMaintenanceEquipmentEntity")
+  workEquipment        workEquipment[]        @relation("workEquipmentEquipment")
+  prices               equipmentPrice[]       @relation("equipmentEntityPrices")
+  facilityEquipments   facilityEquipment[]
+}
+
+model equipmentType {
+  id                     Int               @id @default(autoincrement())
+  name                   String
+  description            String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime?          @updatedAt
+  deletedAt              DateTime?
+  createdBy              String
+  updatedBy              String?
+  equipmentTypeCreatedBy user              @relation("equipmentTypeCreatedBy", fields: [createdBy], references: [id])
+  equipmentTypeUpdatedBy user?              @relation("equipmentTypeUpdatedBy", fields: [updatedBy], references: [id])
+  equipmentModel         equipmentModel[]  @relation("equipmentType")
+  equipmentEntities      equipmentEntity[] @relation("equipmentEntityType")
+}
+
+model equipmentBrand {
+  id                      Int               @id @default(autoincrement())
+  name                    String
+  description             String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime?          @updatedAt
+  deletedAt               DateTime?
+  createdBy               String
+  updatedBy               String?
+  equipmentBrandCreatedBy user              @relation("equipmentBrandCreatedBy", fields: [createdBy], references: [id])
+  equipmentBrandUpdatedBy user?              @relation("equipmentBrandUpdatedBy", fields: [updatedBy], references: [id])
+  equipment               equipmentEntity[] @relation("equipmentBrand")
+}
+
+model equipmentModel {
+  id                      Int                     @id @default(autoincrement())
+  typeId                  Int
+  name                    String
+  description             String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime?
+  deletedAt               DateTime?
+  createdBy               String
+  updatedBy               String?
+  equipmentModelCreatedBy user                    @relation("equipmentModelCreatedBy", fields: [createdBy], references: [id])
+  equipmentModelUpdatedBy user?                    @relation("equipmentModelUpdatedBy", fields: [updatedBy], references: [id])
+  type                    equipmentType           @relation("equipmentType", fields: [typeId], references: [id])
+  equipment               equipmentEntity[]       @relation("equipmentModel")
+  equipmentModelFeature   equipmentModelFeature[] @relation("equipmentModelFeature")
+  equipmentParts          equipmentPart[]         @relation("equipmentParts")
+}
+
+model equipmentModelFeature {
+  id                             Int            @id @default(autoincrement())
+  equipmentModelId               Int
+  name                           String
+  value                          String?
+  unitId                         Int?
+  createdAt                      DateTime       @default(now())
+  updatedAt                      DateTime?       @updatedAt
+  deletedAt                      DateTime?
+  createdBy                      String
+  updatedBy                      String?
+  equipmentModel                 equipmentModel @relation("equipmentModelFeature", fields: [equipmentModelId], references: [id])
+  unit                           unit?          @relation("equipmentModelFeatureUnit", fields: [unitId], references: [id])
+  equipmentModelFeatureCreatedBy user           @relation("equipmentModelFeatureCreatedBy", fields: [createdBy], references: [id])
+  equipmentModelFeatureUpdatedBy user?           @relation("equipmentModelFeatureUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model equipmentFeature {
+  id                        Int             @id @default(autoincrement())
+  equipmentEntityId         Int
+  name                      String
+  value                     String?
+  unitId                    Int?
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime?        @updatedAt
+  deletedAt                 DateTime?
+  createdBy                 String
+  updatedBy                 String?
+  equipmentEntity           equipmentEntity @relation("equipmentFeatureEquipmentEntity", fields: [equipmentEntityId], references: [id])
+  unit                      unit?           @relation("equipmentFeatureUnit", fields: [unitId], references: [id])
+  equipmentFeatureCreatedBy user            @relation("equipmentFeatureCreatedBy", fields: [createdBy], references: [id])
+  equipmentFeatureUpdatedBy user?            @relation("equipmentFeatureUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model equipmentMaintenance {
+  id                            Int             @id @default(autoincrement())
+  equipmentEntityId             Int
+  name                          String
+  value                         String?
+  unitId                        Int?
+  createdAt                     DateTime        @default(now())
+  updatedAt                     DateTime?        @updatedAt
+  deletedAt                     DateTime?
+  createdBy                     String
+  updatedBy                     String?
+  equipmentEntity               equipmentEntity @relation("equipmentMaintenanceEquipmentEntity", fields: [equipmentEntityId], references: [id])
+  unit                          unit?           @relation("equipmentMaintenanceUnit", fields: [unitId], references: [id])
+  equipmentMaintenanceCreatedBy user            @relation("equipmentMaintenanceCreatedBy", fields: [createdBy], references: [id])
+  equipmentMaintenanceUpdatedBy user?            @relation("equipmentMaintenanceUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model equipmentPart {
+  id                     Int            @id @default(autoincrement())
+  equipmentModelId       Int
+  partNumber             String?
+  name                   String
+  otherName              String?
+  description            String?
+  unit                   Int?
+  lifeSpan               Int?
+  lifeSpanUnitId         Int?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime?       @updatedAt
+  deletedAt              DateTime?
+  createdBy              String
+  updatedBy              String?
+  equipmentModel         equipmentModel @relation("equipmentParts", fields: [equipmentModelId], references: [id])
+  lifeSpanUnit           unit?          @relation("equipmentPartLifeSpanUnit", fields: [lifeSpanUnitId], references: [id])
+  equipmentPartCreatedBy user           @relation("equipmentPartCreatedBy", fields: [createdBy], references: [id])
+  equipmentPartUpdatedBy user?           @relation("equipmentPartUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model equipmentPrice {
+  id                      Int              @id @default(autoincrement())
+  equipmentEntityId       Int
+  customerGroup           Int?             // Optional customer group tier (1: Regular, 2: VIP, 3: Wholesale/B2B, 4: Corporate, 5: Distributor, null: All / Default)
+  priceType               String           @db.VarChar(50) // SALE, LEASE_DAILY, LEASE_MONTHLY, LEASE_YEARLY
+  amount                  Decimal          @db.Decimal(20, 4)
+  currency                String           @default("IDR") @db.VarChar(3)
+  startDate               DateTime         @default(now())
+  endDate                 DateTime?
+  notes                   String?          @db.Text
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime?        @updatedAt
+  deletedAt               DateTime?
+  createdBy               String
+  updatedBy               String?
+  equipmentPriceCreatedBy user             @relation("equipmentPriceCreatedBy", fields: [createdBy], references: [id])
+  equipmentPriceUpdatedBy user?            @relation("equipmentPriceUpdatedBy", fields: [updatedBy], references: [id])
+  equipmentEntity         equipmentEntity  @relation("equipmentEntityPrices", fields: [equipmentEntityId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentEntityId])
+}

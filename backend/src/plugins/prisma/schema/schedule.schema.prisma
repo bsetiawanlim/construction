@@ -1,0 +1,37 @@
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Employee Schedule — Roster / Work Schedule
+/// ─────────────────────────────────────────────────────────────────────────────
+
+model employeeSchedule {
+  id           Int       @id @default(autoincrement())
+  employeeId   Int
+
+  /// The calendar date this schedule block applies to
+  scheduleDate DateTime  @db.Date
+
+  /// Start time as HH:MM (24-hour), e.g. "08:00"
+  startTime    String    @db.VarChar(5)
+
+  /// End time as HH:MM (24-hour), e.g. "16:00"
+  endTime      String    @db.VarChar(5)
+
+  facilityId   Int?
+  notes        String?   @db.Text
+  isActive     Boolean   @default(true)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime? @updatedAt
+  deletedAt    DateTime?
+  createdBy    String?
+  updatedBy    String?
+
+  employee     employee  @relation("employeeSchedules", fields: [employeeId], references: [id])
+  facility     facility? @relation("facilitySchedules",  fields: [facilityId], references: [id], onDelete: SetNull)
+  createdByUser user?    @relation("scheduleCreatedBy",  fields: [createdBy], references: [id])
+  updatedByUser user?    @relation("scheduleUpdatedBy",  fields: [updatedBy], references: [id])
+
+  @@index([employeeId])
+  @@index([scheduleDate])
+  @@index([facilityId])
+  @@index([deletedAt])
+}

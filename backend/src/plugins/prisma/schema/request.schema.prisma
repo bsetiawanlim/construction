@@ -1,0 +1,52 @@
+model request {
+  id               Int              @id @default(autoincrement())
+  number           String           @unique
+  sourceId          Int
+  title            String
+  date             DateTime         @default(now())
+  dueDate          DateTime         @default(now())
+  status           orderStatus
+  notes            String?          @db.Text
+  createdBy        String
+  updatedBy        String?
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?         @updatedAt
+  requestCreatedBy user             @relation("requestCreatedBy", fields: [createdBy], references: [id])
+  requestUpdatedBy user?             @relation("requestUpdatedBy", fields: [updatedBy], references: [id])
+  requestProducts  requestProduct[] @relation("request")
+  requestSource    requestSource    @relation("requestSource", fields: [sourceId], references: [id])
+}
+
+model requestProduct {
+  id                   Int       @id @default(autoincrement())
+  requestId            Int
+  productId            Int
+  unitId               Int?
+  unit                 unit?     @relation("requestProductUnit", fields: [unitId], references: [id])
+  quantity             Decimal   @db.Decimal(20, 4)
+  notes                String?   @db.Text
+  createdBy            String
+  updatedBy            String?
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime?  @updatedAt
+  request              request   @relation("request", fields: [requestId], references: [id])
+  requestProduct       product   @relation("requestProduct", fields: [productId], references: [id])
+  requestItemCreatedBy user      @relation("requestProductCreatedBy", fields: [createdBy], references: [id])
+  requestItemUpdatedBy user?      @relation("requestProductUpdatedBy", fields: [updatedBy], references: [id])
+}
+
+model requestSource {
+  id                   Int           @id @default(autoincrement())
+  name                 String        @db.VarChar(50)
+  requestOrigin        requestOrigin
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime?      @updatedAt
+  deletedAt            DateTime?
+  createdBy            String
+  updatedBy            String?
+  requestSourceCreatedBy user        @relation("requestSourceCreatedBy", fields: [createdBy], references: [id])
+  requestSourceUpdatedBy user?        @relation("requestSourceUpdatedBy", fields: [updatedBy], references: [id])
+  requests             request[]     @relation("requestSource")
+}

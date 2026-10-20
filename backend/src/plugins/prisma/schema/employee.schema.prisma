@@ -1,0 +1,96 @@
+
+enum employmentType {
+  MONTHLY
+  BI_WEEKLY
+  WEEKLY
+  DAILY
+  HOURLY
+  CONTRACT
+}
+model employee {
+  id                Int               @id @default(autoincrement())
+  profileId         Int
+  positionId        Int?
+  employmentType    employmentType    @default(MONTHLY)
+  salaryBasis       payrollFrequency? @default(monthly)
+  payFrequency      payrollFrequency? @default(monthly)
+  hourlyRate        Decimal?          @db.Decimal(20, 4)
+  dailyRate         Decimal?          @db.Decimal(20, 4)
+  weeklyRate        Decimal?          @db.Decimal(20, 4)
+  biWeeklyRate      Decimal?          @db.Decimal(20, 4)
+  monthlySalary     Decimal?          @db.Decimal(20, 4)
+  contractRate      Decimal?          @db.Decimal(20, 4)
+  startDate         DateTime       @default(now())
+  endDate           DateTime?
+  departReason      String?
+  facilityId        Int?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime?      @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  employeeCreatedBy user           @relation("employeeCreatedBy", fields: [createdBy], references: [id])
+  updatedBy         String?
+  employeeUpdatedBy user?          @relation("employeeUpdatedBy", fields: [updatedBy], references: [id])
+  profile           profile        @relation("employeeProfile", fields: [profileId], references: [id])
+  position          position?      @relation("employeePosition", fields: [positionId], references: [id])
+  facility          facility?      @relation("employeeFacility", fields: [facilityId], references: [id], onDelete: SetNull)
+  salaryRecords     salaryRecord[] @relation("employeeSalaryRecords")
+  attendanceRecords attendance[]   @relation("employeeAttendance")
+  productionBatches productionBatch[] @relation("productionPersonInCharge")
+  facilityEmployees facilityEmployee[]
+  schedules         employeeSchedule[] @relation("employeeSchedules")
+
+  @@index([facilityId])
+}
+
+model position {
+  id                Int        @id @default(autoincrement())
+  name              String     @db.VarChar(100)
+  description       String?    @db.Text
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+  createdBy         String
+  positionCreatedBy user       @relation("positionCreatedBy", fields: [createdBy], references: [id])
+  updatedBy         String
+  positionUpdatedBy user       @relation("positionUpdatedBy", fields: [updatedBy], references: [id])
+  employee          employee[] @relation("employeePosition")
+}
+
+enum attendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  SICK
+  ON_LEAVE
+  PERMISSION
+}
+
+model attendance {
+  id                  Int              @id @default(autoincrement())
+  employeeId          Int
+  date                DateTime         @db.Date
+  clockIn             DateTime?
+  clockOut            DateTime?
+  status              attendanceStatus @default(PRESENT)
+  clockInIp           String?          @db.VarChar(45)
+  clockOutIp          String?          @db.VarChar(45)
+  clockInLocation     String?          @db.VarChar(255)
+  clockOutLocation    String?          @db.VarChar(255)
+  workDurationMinutes Int?
+  notes               String?          @db.Text
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime?        @updatedAt
+  deletedAt           DateTime?
+  createdBy           String
+  updatedBy           String?
+  employee            employee         @relation("employeeAttendance", fields: [employeeId], references: [id], onDelete: Cascade)
+  attendanceCreatedBy user             @relation("attendanceCreatedBy", fields: [createdBy], references: [id])
+  attendanceUpdatedBy user?            @relation("attendanceUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@index([deletedAt])
+}

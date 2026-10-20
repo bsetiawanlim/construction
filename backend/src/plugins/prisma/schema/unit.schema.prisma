@@ -1,0 +1,36 @@
+model unit {
+  id            Int       @id @default(autoincrement())
+  baseQuantity  String    @db.VarChar(50)
+  unit          String    @db.VarChar(50)
+  abbr          String    @db.VarChar(10)
+  toBase        String    @db.VarChar(50)
+  fromBase      String    @db.VarChar(50)
+  description   String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  createdBy     String
+  unitCreatedBy user      @relation("unitCreatedBy", fields: [createdBy], references: [id])
+  updatedBy     String?
+  unitUpdatedBy user?      @relation("unitUpdatedBy", fields: [updatedBy], references: [id])
+  // Back-relations from work schema
+  workers       worker[]  @relation("workerUnit")
+  items         item[]    @relation("itemUnit")
+  works                     work[]                  @relation("workUnit")
+  // Equipment back-relations
+  equipmentEntities         equipmentEntity[]       @relation("equipmentUnit")
+  equipmentModelFeatures    equipmentModelFeature[] @relation("equipmentModelFeatureUnit")
+  equipmentFeatures         equipmentFeature[]      @relation("equipmentFeatureUnit")
+  equipmentMaintenances     equipmentMaintenance[]  @relation("equipmentMaintenanceUnit")
+  equipmentPartLifeSpans    equipmentPart[]         @relation("equipmentPartLifeSpanUnit")
+  // Order back-relations
+  rfqProductUnits           rfqProduct[]            @relation("rfqProductUnit")
+  purchaseOrderProductUnits purchaseOrderProduct[]  @relation("purchaseOrderProductUnit")
+  // Request back-relations
+  requestProductUnits       requestProduct[]        @relation("requestProductUnit")
+  // Product back-relations
+  products                  product[]               @relation("productUnit")
+  // POS back-relations
+  salesOrderItems           salesOrderItem[]        @relation("salesOrderItemUnit")
+  recipeUnits               productRecipe[]         @relation("recipeUnit")
+}
